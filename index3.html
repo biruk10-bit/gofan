@@ -449,6 +449,24 @@ const EVENTS = [
 let tickets = [];
 try{ tickets = JSON.parse(localStorage.getItem('whs_tickets')||'[]'); }catch(e){ tickets = []; }
 function save(){ try{ localStorage.setItem('whs_tickets', JSON.stringify(tickets)); }catch(e){} }
+const USED_TICKET_LIFETIME_MS = 15 * 60 * 1000;
+
+// Remove redeemed tickets 15 minutes after their individual redemption.
+function removeExpiredUsedTickets(){
+  const now = Date.now();
+  const before = tickets.length;
+  tickets = tickets.filter(t => {
+    if(t.status !== 'used') return true;
+    // Older saved tickets without a timestamp are removed, since their age is unknown.
+    if(!Number.isFinite(t.usedAtMs)) return false;
+    return now - t.usedAtMs < USED_TICKET_LIFETIME_MS;
+  });
+  if(tickets.length !== before){
+    save();
+    renderTickets();
+  }
+}
+
 
 function renderEvents(){
 const el = document.getElementById('eventList');
@@ -625,6 +643,7 @@ pendingTicketIds.forEach(id => {
 const t = tickets.find(x => x.id === id);
 t.status = 'used';
 t.usedAt = stamp;
+t.usedAtMs = Date.now();
 });
 save();
 selectedTickets.clear();
@@ -661,7 +680,9 @@ document.getElementById('navHome').onclick = () => switchView('home');
 document.getElementById('navTickets').onclick = () => switchView('tickets');
 
 renderEvents();
+removeExpiredUsedTickets();
 renderTickets();
+setInterval(removeExpiredUsedTickets, 1000);
 document.getElementById('brandLogoMain').src = GOFANS_LOGO;
 document.getElementById('brandLogoSheet').src = GOFANS_LOGO;
 </script>
