@@ -864,7 +864,7 @@ const LOGO_PAINTBRANCH = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAACg
 
 const EVENTS = [
 
-{id:'fb2', logo: LOGO_WHEATON, host:'Albert Einstein HS', sport:'Soccer', level:'Boys Varsity', opp:'MPSSAA Boys Soccer 4A North Region II Finals: Albert Einstein HS vs Wheaton HS', date:'Wed, Nov 04, 2026', month:'NOV', day:'04', time:'6:00 PM', place:'6:00 PM', price:7, fee:'$6 price + $1 fee', bannerColor:'#a3161c'},
+{id:'fb2', logo: LOGO_WHEATON, host:'Wheaton HS', sport:'Soccer', level:'Boys Varsity', opp:'MPSSAA Boys Soccer 4A North Region II Finals: Albert Einstein HS vs Wheaton HS', date:'Wed, Nov 04, 2026', month:'NOV', day:'04', time:'6:00 PM', place:'6:00 PM', price:7, fee:'$6 price + $1 fee', bannerColor:'#a3161c'},
 
 {id:'bb1', logo: LOGO_WHEATON, host:'Wheaton High School', sport:'Basketball', level:'Boys Varsity', opp:'Wheaton Knights vs John F Kennedy Cavaliers', date:'Mon, Feb 08, 2027', month:'FEB', day:'8', time:'6:00 PM', place:'6:00 PM', price:5, fee:'$4 price + $1 fee', bannerColor:'#a3161c'},
 
@@ -872,7 +872,7 @@ const EVENTS = [
 
 {id:'fb5', logo: LOGO_SPRINGBROOK, host:'Springbrook High School', sport:'Football', level:'Boys Varsity/JV', opp:'Springbrook Blue Devils vs Montgomery Blair Blazers', date:'Thu, Oct 15, 2026', month:'OCT', day:'15', time:'4:15 PM', place:'4:15 PM', price:5, fee:'$4 price + $1 fee', bannerColor:'#13213f'},
 
-{id:'fb6', logo: LOGO_PAINTBRANCH, host:'Paint Branch High School', sport:'Football', level:'Boys Varsity', opp:'James Hubert Blake Bengals vs Paint Branch Panthers', date:'Thu, Oct 22, 2026', month:'OCT', day:'22', time:'6:30 PM', place:'6:30 PM', price:5, fee:'$4 price + $1 fee', bannerColor:'#702030'},
+{id:'fb6', logo: LOGO_PAINTBRANCH, host:'Paint Branch High School', sport:'Football', level:'Boys Varsity', opp:'Football Round 1: Montgomery Blair at Paint Branch', date:'Fri, Nov 06, 2026', month:'NOV', day:'06', time:'6:30 PM', place:'6:30 PM', price:7, fee:'$6 price + $1 fee', bannerColor:'#702030'},
 
 ];
 
@@ -984,7 +984,39 @@ document.getElementById('bulkGoBtn').textContent = `Use ${n} ticket${n>1?'s':''}
 
 }
 
+const USED_TICKET_LIFETIME = 15 * 60 * 1000;
+
+
+function purgeExpiredUsedTickets(){
+
+const now = Date.now();
+
+let changed = false;
+
+for(let i = tickets.length - 1; i >= 0; i--){
+
+const ticket = tickets[i];
+
+if(ticket.status === 'used' && ticket.usedAtMs && now - ticket.usedAtMs >= USED_TICKET_LIFETIME){
+
+tickets.splice(i, 1);
+
+changed = true;
+
+}
+
+}
+
+if(changed) save();
+
+return changed;
+
+}
+
+
 function renderTickets(){
+
+purgeExpiredUsedTickets();
 
 const el = document.getElementById('ticketList');
 
@@ -1229,6 +1261,8 @@ const t = tickets.find(x => x.id === id);
 
 t.status = 'used';
 
+t.usedAtMs = Date.now();
+
 t.usedAt = stamp;
 
 });
@@ -1299,6 +1333,12 @@ document.getElementById('navHome').onclick = () => switchView('home');
 
 document.getElementById('navTickets').onclick = () => switchView('tickets');
 
+
+setInterval(() => {
+
+if(purgeExpiredUsedTickets()) renderTickets();
+
+}, 1000);
 
 renderEvents();
 
